@@ -1960,6 +1960,10 @@ class Qwen3TTSTalkerForConditionalGeneration(Qwen3TTSTalkerTextPreTrainedModel, 
             loss = self.loss_function(logits=logits, labels=labels, vocab_size=self.config.vocab_size, **kwargs)
 
 
+        # Store codec_ids for streaming access (used by CodecStreamer)
+        if codec_ids is not None:
+            self._last_codec_ids = codec_ids
+
         return Qwen3TTSTalkerOutputWithPast(
             loss=loss,
             logits=logits,
@@ -2525,6 +2529,7 @@ class Qwen3TTSForConditionalGeneration(Qwen3TTSPreTrainedModel, GenerationMixin)
         subtalker_temperature: float = 0.9,
         eos_token_id: Optional[int] = None,
         repetition_penalty: float = 1.05,
+        codec_callback: Optional[callable] = None,
         **kwargs,
     ):
         # Multiple EOS tokens that can terminate generation
@@ -2573,6 +2578,27 @@ class Qwen3TTSForConditionalGeneration(Qwen3TTSPreTrainedModel, GenerationMixin)
                 speakers=speakers,
                 non_streaming_mode=non_streaming_mode,
             )
+
+        # Create CodecStreamer if codec_callback is provided for streaming
+        if codec_callback is not None:
+            from transformers.generation.streamers import BaseStreamer
+
+            class CodecStreamer(BaseStreamer):
+                """Streamer that captures codec_ids during generation."""
+
+                def __init__(self, talker, callback):
+                    self.talker = talker
+                    self.callback = callback
+
+                def put(self, value):
+                    if hasattr(self.talker, '_last_codec_ids') and self.talker._last_codec_ids is not None:
+                        self.callback(self.talker._last_codec_ids.clone())
+
+                def end(self):
+                    if hasattr(self.talker, '_last_codec_ids'):
+                        self.talker._last_codec_ids = None
+
+            talker_kwargs['streamer'] = CodecStreamer(self.talker, codec_callback)
 
         # forward
         talker_result = self.talker.generate(
