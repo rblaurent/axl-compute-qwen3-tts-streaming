@@ -1,19 +1,25 @@
-# Qwen3-TTS Streaming
+# Qwen3-TTS Streaming (Axl Fork)
 
-Real-time streaming audio generation for [Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS).
+> **This is a private fork for [Axl](https://github.com/rblaurent/axl).** Do not use this directly — use the upstream repo [rekuenkdr/Qwen3-TTS-streaming](https://github.com/rekuenkdr/Qwen3-TTS-streaming) instead.
 
-## Features
+Fork of [rekuenkdr/Qwen3-TTS-streaming](https://github.com/rekuenkdr/Qwen3-TTS-streaming), which itself builds on [Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS).
 
-From [dffdeeq/Qwen3-TTS-streaming](https://github.com/dffdeeq/Qwen3-TTS-streaming):
+## What this fork adds
+
+- `stream_generate_custom_voice()` — streaming support for the `CustomVoice` model type (the upstream fork only supports `voice_clone`)
+
+Everything else comes from upstream. See the [upstream README](https://github.com/rekuenkdr/Qwen3-TTS-streaming) for full documentation.
+
+## Upstream features
+
+From [rekuenkdr/Qwen3-TTS-streaming](https://github.com/rekuenkdr/Qwen3-TTS-streaming):
 - `stream_generate_voice_clone()` - streaming with voice cloning
 - `stream_generate_pcm()` - real-time PCM audio streaming
 - `torch.compile` + CUDA graphs optimization
-
-Added in this fork:
 - **Two-phase streaming** - faster first-chunk latency
-- **Repetition penalty for streaming** - prevents token loops that cause looping audio and runaway generation. Defaults to 1.0 (disabled) because streaming generates frame-by-frame with CUDA graph constraints where repetition manifests differently than the non-streaming path (which defaults to 1.05)
-- **Multiple EOS token detection** - broader termination coverage for reliable generation stopping
-- **Hann window crossfade** - click-free chunk boundaries with proper fade-in/fade-out
+- **Repetition penalty for streaming** - prevents token loops
+- **Multiple EOS token detection** - broader termination coverage
+- **Hann window crossfade** - click-free chunk boundaries
 
 ## Two-Phase Streaming
 
